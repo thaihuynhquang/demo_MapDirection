@@ -18,20 +18,84 @@ export default class App extends Component {
                 latitudeDelta: 0.01,
                 longitudeDelta: 0.01,
             },
+            initialPosition: null,
+            markers: []
         };
+        this.newMarkers = [];
+    }
+    componentDidMount() {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                this.setState({
+                    initialPosition: {
+                        id: position.timestamp,
+                        latLng: {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude
+                        },
+                        title: "your current location."
+                    },
+                    region: {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        latitudeDelta: 0.01,
+                        longitudeDelta: 0.01
+                    }
+                });
+            },
+            (error) => console.log(`Error: ${error}`),
+            { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
+        );
+    }
+    addMarker(data) {
+        const { position, coordinate } = data.nativeEvent;
+        this.newMarkers.push(
+            {
+                id: coordinate.latitude + position.x,
+                latLng: coordinate,
+                title: `Marker in ${position.x} and ${position.y}`
+            }
+        );
+        this.setState({
+            markers: this.newMarkers,
+            region: {
+                latitude: coordinate.latitude,
+                longitude: coordinate.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01
+            }
+        });
     }
     render() {
-        const { region } = this.state;
+        const { region, markers, initialPosition } = this.state;
         const { container, wrapInput, wrapMap } = styles;
+        const MarkersJSX = markers.map(marker => (
+            <MapView.Marker
+                key={marker.id}
+                coordinate={marker.latLng}
+                title={marker.title}
+            />
+        ));
+        const initMarkerJSX = initialPosition != null ? (
+            <MapView.Marker
+                key={initialPosition.id}
+                coordinate={initialPosition.latLng}
+                title={initialPosition.title}
+            />
+        ) : null;
         return (
             <MapView
                 style={{ flex: 1 }}
                 region={region}
+                onPress={this.addMarker.bind(this)}
             >
+                {initMarkerJSX}
+                {MarkersJSX}
             </MapView>
         )
     }
 }
+
 const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
     container: {
