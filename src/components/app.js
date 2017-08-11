@@ -4,9 +4,13 @@ import {
     View,
     Text,
     TextInput,
-    Dimensions
+    Dimensions, TouchableOpacity
 } from 'react-native';
 import MapView from 'react-native-maps';
+import Polyline from '@mapbox/polyline';
+
+const URL = "https://maps.googleapis.com/maps/api/directions/json?";
+const APIKey = "AIzaSyCUe40uGa-K0XGKgj70EgEJOvukiz3Rc24"
 
 export default class App extends Component {
     constructor(props) {
@@ -19,33 +23,53 @@ export default class App extends Component {
                 longitudeDelta: 0.01,
             },
             initialPosition: null,
-            markers: []
+            markers: [],
+            coords: []
         };
         this.newMarkers = [];
     }
     componentDidMount() {
+        this.getCurrentLocation();
+    }
+    getCurrentLocation() {
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                this.setState({
-                    initialPosition: {
-                        id: position.timestamp,
-                        latLng: {
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude
-                        },
-                        title: "your current location."
-                    },
-                    region: {
+                let initialPosition = {
+                    id: position.timestamp,
+                    latLng: {
                         latitude: position.coords.latitude,
-                        longitude: position.coords.longitude,
-                        latitudeDelta: 0.01,
-                        longitudeDelta: 0.01
-                    }
-                });
+                        longitude: position.coords.longitude
+                    },
+                    title: "your current location."
+                };
+                let region = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01
+                };
+                this.setState({ initialPosition, region });
             },
             (error) => console.log(`Error: ${error}`),
             { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 }
         );
+    }
+    async getDirections(originLoc, destinationLoc) {
+        try {
+            let resp = await fetch(`${URL}origin=${originLoc}&destination=${destinationLoc}&key=${APIKey}`);
+            let respJson = await resp.json();
+            let points = Polyline.decode(respJson.routes[0].overview_polyline.points);
+            let coords = points.map((point, index) => {
+                return {
+                    latitude: point[0],
+                    longitude: point[1]
+                }
+            })
+            this.setState({ coords });
+            return coords
+        } catch (error) {
+            console.log(`Error: ${error}`);
+        }
     }
     addMarker(data) {
         const { position, coordinate } = data.nativeEvent;
@@ -66,9 +90,18 @@ export default class App extends Component {
             }
         });
     }
+    onPress() {
+        const { initialPosition } = this.state;
+        let originLat = initialPosition.latLng.latitude;
+        let orginLng = initialPosition.latLng.longitude;
+        let destinationLat = 10.8510617;
+        let destinationLng = 106.7698235;
+        if (originLat === null || orginLng == null) return;
+        this.getDirections(`${originLat},${orginLng}`, `${destinationLat},${destinationLng}`);
+    }
     render() {
-        const { region, markers, initialPosition } = this.state;
-        const { container, wrapInput, wrapMap } = styles;
+        const { region, markers, initialPosition, coords } = this.state;
+        const { container, wrapInput, wrapMap, wrapButton, wrapText } = styles;
         const MarkersJSX = markers.map(marker => (
             <MapView.Marker
                 key={marker.id}
@@ -84,14 +117,25 @@ export default class App extends Component {
             />
         ) : null;
         return (
-            <MapView
-                style={{ flex: 1 }}
-                region={region}
-                onPress={this.addMarker.bind(this)}
-            >
-                {initMarkerJSX}
-                {MarkersJSX}
-            </MapView>
+            <View style={container}>
+                <MapView
+                    style={wrapMap}
+                    region={region}
+                    onPress={this.addMarker.bind(this)}
+                >
+                    {initMarkerJSX}
+                    {MarkersJSX}
+                    <MapView.Polyline
+                        coordinates={coords}
+                        strokeWidth={2}
+                        strokeColor="red"
+                    />
+                </MapView>
+                <TouchableOpacity style={wrapButton} onPress={this.onPress.bind(this)}>
+                    <Text style={wrapText}>Chỉ đường đên chợ Thủ Đức</Text>
+                </TouchableOpacity>
+            </View>
+
         )
     }
 }
@@ -101,9 +145,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#4CAF50',
-        padding: 10
+        alignItems: 'center'
     },
     wrapInput: {
         flex: 1,
@@ -113,8 +155,22 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     wrapMap: {
-        flex: 10,
-        width: width - 10
+        flex: 11,
+        width: width
+    },
+    wrapButton: {
+        flex: 1,
+        width: width,
+        backgroundColor: '#2ABB9C',
+        borderRadius: 2,
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    wrapText: {
+        color: '#FFF',
+        fontSize: 15,
+        fontWeight: 'bold',
+        fontFamily: 'Avenir'
     }
 })
 
@@ -136,4 +192,7 @@ const styles = StyleSheet.create({
                 >
                 </MapView>
             </View>
+
+    
+                    
  */
