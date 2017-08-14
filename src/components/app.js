@@ -10,7 +10,7 @@ import MapView from 'react-native-maps';
 import Polyline from '@mapbox/polyline';
 
 const URL = "https://maps.googleapis.com/maps/api/directions/json?";
-const APIKey = "AIzaSyCUe40uGa-K0XGKgj70EgEJOvukiz3Rc24"
+const APIKey = "AIzaSyCUe40uGa-K0XGKgj70EgEJOvukiz3Rc24";
 
 export default class App extends Component {
     constructor(props) {
@@ -58,6 +58,7 @@ export default class App extends Component {
         try {
             let resp = await fetch(`${URL}origin=${originLoc}&destination=${destinationLoc}&key=${APIKey}`);
             let respJson = await resp.json();
+            if(respJson.status != "OK") return;
             let points = Polyline.decode(respJson.routes[0].overview_polyline.points);
             let coords = points.map((point, index) => {
                 return {
@@ -91,12 +92,12 @@ export default class App extends Component {
         });
     }
     onPress() {
-        const { initialPosition } = this.state;
+        const { initialPosition, markers } = this.state;
+        if (initialPosition === null || markers[0] === undefined) return;
         let originLat = initialPosition.latLng.latitude;
         let orginLng = initialPosition.latLng.longitude;
-        let destinationLat = 10.8510617;
-        let destinationLng = 106.7698235;
-        if (originLat === null || orginLng == null) return;
+        let destinationLat = markers[0].latLng.latitude;
+        let destinationLng = markers[0].latLng.longitude;
         this.getDirections(`${originLat},${orginLng}`, `${destinationLat},${destinationLng}`);
     }
     render() {
@@ -114,6 +115,7 @@ export default class App extends Component {
                 key={initialPosition.id}
                 coordinate={initialPosition.latLng}
                 title={initialPosition.title}
+                pinColor='#FFC107'
             />
         ) : null;
         return (
@@ -132,7 +134,7 @@ export default class App extends Component {
                     />
                 </MapView>
                 <TouchableOpacity style={wrapButton} onPress={this.onPress.bind(this)}>
-                    <Text style={wrapText}>Chỉ đường đên chợ Thủ Đức</Text>
+                    <Text style={wrapText}>Direction</Text>
                 </TouchableOpacity>
             </View>
 
