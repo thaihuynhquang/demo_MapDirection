@@ -8,6 +8,10 @@ import {
 } from 'react-native';
 import MapView from 'react-native-maps';
 import Polyline from '@mapbox/polyline';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+
+const homePlace = { description: 'Home', geometry: { location: { lat: 10.8154831, lng: 106.7650663 } } };
+const workPlace = { description: 'Work', geometry: { location: { lat: 10.755639, lng: 106.1347037 } } };
 
 const URL = "https://maps.googleapis.com/maps/api/directions/json?";
 const APIKey = "AIzaSyCUe40uGa-K0XGKgj70EgEJOvukiz3Rc24";
@@ -58,7 +62,9 @@ export default class App extends Component {
         try {
             let resp = await fetch(`${URL}origin=${originLoc}&destination=${destinationLoc}&key=${APIKey}`);
             let respJson = await resp.json();
-            if(respJson.status != "OK") return;
+            console.log("***********");
+            console.log(respJson);
+            if (respJson.status != "OK") return;
             let points = Polyline.decode(respJson.routes[0].overview_polyline.points);
             let coords = points.map((point, index) => {
                 return {
@@ -102,7 +108,7 @@ export default class App extends Component {
     }
     render() {
         const { region, markers, initialPosition, coords } = this.state;
-        const { container, wrapInput, wrapMap, wrapButton, wrapText } = styles;
+        const { container, wrapInput, wrapMap, wrapButton, titleStyle, autocompleteContainer } = styles;
         const MarkersJSX = markers.map(marker => (
             <MapView.Marker
                 key={marker.id}
@@ -120,6 +126,54 @@ export default class App extends Component {
         ) : null;
         return (
             <View style={container}>
+                <View style={autocompleteContainer}>
+                    <GooglePlacesAutocomplete
+                        placeholder='Search'
+                        minLength={2}
+                        autoFocus={false}
+                        returnKeyType={'search'}
+                        listViewDisplayed='auto'
+                        fetchDetails={false}
+                        renderDescription={(row) => row.description}
+                        onPress={(data, details = null) => { // 'details' is provided when fetchDetails = true
+                            console.log(data);
+                        }}
+                        getDefaultValue={() => {
+                            return ''; // text input default value
+                        }}
+                        query={{
+                            key: 'AIzaSyDWCxpoQ3SXJG35Yguq0Lz2R7e_Htv4ZnE',
+                            language: 'en', // language of the results
+                        }}
+                        styles={{
+                            textInputContainer: {
+                                height: 45,
+                                width: width - 14,
+                                marginLeft: 7,
+                                marginBottom: 0,
+                                backgroundColor: 'rgba(0,0,0,0)',
+                                borderTopWidth: 0,
+                                borderBottomWidth: 0
+                            },
+                            textInput: {
+                                marginLeft: 0,
+                                marginRight: 0,
+                                height: 38,
+                                color: '#5d5d5d',
+                                fontSize: 16
+                            },
+                            predefinedPlacesDescription: {
+                                color: '#1faadb'
+                            },
+                            listView: {
+                                width: width - 14,
+                                marginLeft: 7,
+                                backgroundColor: '#FAFAFA'
+                            }
+                        }}
+                        debounce={200}
+                    />
+                </View>
                 <MapView
                     style={wrapMap}
                     region={region}
@@ -134,10 +188,9 @@ export default class App extends Component {
                     />
                 </MapView>
                 <TouchableOpacity style={wrapButton} onPress={this.onPress.bind(this)}>
-                    <Text style={wrapText}>Direction</Text>
+                    <Text style={titleStyle}>Direction</Text>
                 </TouchableOpacity>
             </View>
-
         )
     }
 }
@@ -148,6 +201,13 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center'
+    },
+    autocompleteContainer: {
+        left: 0,
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        zIndex: 1
     },
     wrapInput: {
         flex: 1,
@@ -168,7 +228,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center'
     },
-    wrapText: {
+    titleStyle: {
         color: '#FFF',
         fontSize: 15,
         fontWeight: 'bold',
@@ -177,24 +237,7 @@ const styles = StyleSheet.create({
 })
 
 /**
- * <View style={container}>
-                <TextInput
-                    style={wrapInput}
-                    underlineColorAndroid='transparent'
-                    placeholder="Kinh độ"
-                />
-                <TextInput
-                    style={wrapInput}
-                    underlineColorAndroid='transparent'
-                    placeholder="Vĩ độ"
-                />
-                <MapView
-                    style={wrapMap}
-                    region={region}
-                >
-                </MapView>
-            </View>
-
-    
+ * let place = 'place_id:EjND4bqndSBS4bqhY2ggQ2hp4bq_YywgQW4gUGjDuiwgSG8gQ2hpIE1pbmgsIFZpZXRuYW0';
+        this.getDirections(`${originLat},${orginLng}`, `${place}`);
                     
  */
