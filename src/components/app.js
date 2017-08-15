@@ -1,20 +1,14 @@
 import React, { Component } from 'react';
 import {
-    StyleSheet,
-    View,
-    Text,
-    TextInput,
-    Dimensions, TouchableOpacity
+    StyleSheet, View, Text, TextInput, Dimensions, TouchableOpacity
 } from 'react-native';
 import MapView from 'react-native-maps';
 import Polyline from '@mapbox/polyline';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
-const homePlace = { description: 'Home', geometry: { location: { lat: 10.8154831, lng: 106.7650663 } } };
-const workPlace = { description: 'Work', geometry: { location: { lat: 10.755639, lng: 106.1347037 } } };
-
 const URL = "https://maps.googleapis.com/maps/api/directions/json?";
-const APIKey = "AIzaSyCUe40uGa-K0XGKgj70EgEJOvukiz3Rc24";
+const MapAPIKey = "AIzaSyCUe40uGa-K0XGKgj70EgEJOvukiz3Rc24";
+const PlaceAPIKey = "AIzaSyDWCxpoQ3SXJG35Yguq0Lz2R7e_Htv4ZnE";
 
 export default class App extends Component {
     constructor(props) {
@@ -60,10 +54,8 @@ export default class App extends Component {
     }
     async getDirections(originLoc, destinationLoc) {
         try {
-            let resp = await fetch(`${URL}origin=${originLoc}&destination=${destinationLoc}&key=${APIKey}`);
+            let resp = await fetch(`${URL}origin=${originLoc}&destination=${destinationLoc}&key=${MapAPIKey}`);
             let respJson = await resp.json();
-            console.log("***********");
-            console.log(respJson);
             if (respJson.status != "OK") return;
             let points = Polyline.decode(respJson.routes[0].overview_polyline.points);
             let coords = points.map((point, index) => {
@@ -73,7 +65,6 @@ export default class App extends Component {
                 }
             })
             this.setState({ coords });
-            return coords
         } catch (error) {
             console.log(`Error: ${error}`);
         }
@@ -84,7 +75,7 @@ export default class App extends Component {
             {
                 id: coordinate.latitude + position.x,
                 latLng: coordinate,
-                title: `Marker in ${position.x} and ${position.y}`
+                title: `Your marker in ${position.x},${position.y}`
             }
         );
         this.setState({
@@ -97,6 +88,19 @@ export default class App extends Component {
             }
         });
     }
+    renderDestinationMarker(coords) {
+        if (coords != undefined) {
+            if (coords.length > 0) {
+                var latLng = coords[coords.length - 1];
+                return (
+                    <MapView.Marker
+                        coordinate={latLng}
+                        title={"your destination location."}
+                    />
+                );
+            }
+        }
+    }
     onPress() {
         const { initialPosition, markers } = this.state;
         if (initialPosition === null || markers[0] === undefined) return;
@@ -106,9 +110,17 @@ export default class App extends Component {
         let destinationLng = markers[0].latLng.longitude;
         this.getDirections(`${originLat},${orginLng}`, `${destinationLat},${destinationLng}`);
     }
+    onSearch(place_id) {
+        const { initialPosition } = this.state;
+        var coords
+        if (initialPosition === null) return;
+        let originLat = initialPosition.latLng.latitude;
+        let orginLng = initialPosition.latLng.longitude;
+        this.getDirections(`${originLat},${orginLng}`, `place_id:${place_id}`);
+    }
     render() {
         const { region, markers, initialPosition, coords } = this.state;
-        const { container, wrapInput, wrapMap, wrapButton, titleStyle, autocompleteContainer } = styles;
+        const { container, wrapMap, wrapButton, titleStyle, autocompleteContainer } = styles;
         const MarkersJSX = markers.map(marker => (
             <MapView.Marker
                 key={marker.id}
@@ -128,21 +140,23 @@ export default class App extends Component {
             <View style={container}>
                 <View style={autocompleteContainer}>
                     <GooglePlacesAutocomplete
-                        placeholder='Search'
+                        placeholder='Where do you go?'
                         minLength={2}
                         autoFocus={false}
                         returnKeyType={'search'}
                         listViewDisplayed='auto'
                         fetchDetails={false}
                         renderDescription={(row) => row.description}
-                        onPress={(data, details = null) => { // 'details' is provided when fetchDetails = true
-                            console.log(data);
+                        onPress={(data = null, details = null) => {
+                            if(data != null) {
+                                this.onSearch(data.place_id);
+                            }
                         }}
                         getDefaultValue={() => {
                             return ''; // text input default value
                         }}
                         query={{
-                            key: 'AIzaSyDWCxpoQ3SXJG35Yguq0Lz2R7e_Htv4ZnE',
+                            key: `${PlaceAPIKey}`,
                             language: 'en', // language of the results
                         }}
                         styles={{
@@ -186,9 +200,10 @@ export default class App extends Component {
                         strokeWidth={2}
                         strokeColor="red"
                     />
+                    {this.renderDestinationMarker(coords)}
                 </MapView>
                 <TouchableOpacity style={wrapButton} onPress={this.onPress.bind(this)}>
-                    <Text style={titleStyle}>Direction</Text>
+                    <Text style={titleStyle}>Let's go!</Text>
                 </TouchableOpacity>
             </View>
         )
@@ -209,13 +224,6 @@ const styles = StyleSheet.create({
         top: 0,
         zIndex: 1
     },
-    wrapInput: {
-        flex: 1,
-        width: width - 10,
-        backgroundColor: '#FFF',
-        paddingLeft: 10,
-        marginBottom: 10,
-    },
     wrapMap: {
         flex: 11,
         width: width
@@ -235,9 +243,3 @@ const styles = StyleSheet.create({
         fontFamily: 'Avenir'
     }
 })
-
-/**
- * let place = 'place_id:EjND4bqndSBS4bqhY2ggQ2hp4bq_YywgQW4gUGjDuiwgSG8gQ2hpIE1pbmgsIFZpZXRuYW0';
-        this.getDirections(`${originLat},${orginLng}`, `${place}`);
-                    
- */
