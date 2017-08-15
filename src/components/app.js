@@ -89,16 +89,15 @@ export default class App extends Component {
         });
     }
     renderDestinationMarker(coords) {
-        if (coords != undefined) {
-            if (coords.length > 0) {
-                var latLng = coords[coords.length - 1];
-                return (
-                    <MapView.Marker
-                        coordinate={latLng}
-                        title={"your destination location."}
-                    />
-                );
-            }
+        if (coords[0] === undefined) return;
+        if (coords.length > 0) {
+            var latLng = coords[coords.length - 1];
+            return (
+                <MapView.Marker
+                    coordinate={latLng}
+                    title={"your destination location."}
+                />
+            );
         }
     }
     onPress() {
@@ -112,7 +111,6 @@ export default class App extends Component {
     }
     onSearch(place_id) {
         const { initialPosition } = this.state;
-        var coords
         if (initialPosition === null) return;
         let originLat = initialPosition.latLng.latitude;
         let orginLng = initialPosition.latLng.longitude;
@@ -148,7 +146,7 @@ export default class App extends Component {
                         fetchDetails={false}
                         renderDescription={(row) => row.description}
                         onPress={(data = null, details = null) => {
-                            if(data != null) {
+                            if (data != null) {
                                 this.onSearch(data.place_id);
                             }
                         }}
