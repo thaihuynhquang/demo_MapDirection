@@ -7,8 +7,8 @@ import Polyline from '@mapbox/polyline';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
 const URL = "https://maps.googleapis.com/maps/api/directions/json?";
-const MapAPIKey = "AIzaSyCUe40uGa-K0XGKgj70EgEJOvukiz3Rc24";
-const PlaceAPIKey = "AIzaSyDWCxpoQ3SXJG35Yguq0Lz2R7e_Htv4ZnE";
+const MapAPIKey = "your Google Maps Directions API key";
+const PlaceAPIKey = "your Google Places API key";
 
 export default class App extends Component {
     constructor(props) {
