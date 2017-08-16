@@ -16,6 +16,8 @@ This project uses React Native, Google Places API Web Service, Google Maps Direc
 <img src="Screenshots/Screenshot_2017-08-16-11-38-40.png" alt="direction" height="600">
 <img src="Screenshots/Screenshot_2017-08-16-11-38-57.png" alt="direction" height="600">
 
+**[Video demo](https://www.youtube.com/watch?v=mdlFhbE_LRc)**
+
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine.
